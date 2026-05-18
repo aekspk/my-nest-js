@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -17,53 +18,67 @@ import { ProductsService } from './products.service';
 import { CreateProductDto } from './dtos/create-product.dto';
 import { UpdateProductDto } from './dtos/update-product.dto';
 import { ProductResponseDto } from './dtos/product-response.dto';
+import { ProductListResponseDto } from './dtos/product-list-response.dto';
+import { UniqueConstraintError } from 'src/core/errors/unique-constraint.error';
+import { RecordNotFoundError } from 'src/core/errors/record-not-found.error';
 
 @Controller('products')
 export class ProductsController {
   constructor(private readonly productService: ProductsService) {}
   @Get()
-  findAll(@Query() query: FindAllQueryDto) {
-    const products = this.productService.findAll(query);
-    return products.map((p) => new ProductResponseDto(p));
+  async findAll(@Query() query: FindAllQueryDto) {
+    const itemsPaging = await this.productService.findAll({
+      page: query.page,
+      limit: query.limit,
+    });
+
+    return new ProductListResponseDto(itemsPaging);
   }
 
-  @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    try {
-      const product = this.productService.findById(id);
-      return new ProductResponseDto(product);
-    } catch (error) {
-      throw new NotFoundException(error);
-    }
+  @Get(':idOrSlug')
+  async findOne(@Param('idOrSlug') idOrSlug: string) {
+    const product = await this.productService.findByIdOrSlug(idOrSlug);
+    if (!product) throw new NotFoundException();
+    return new ProductResponseDto(product);
   }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  create(@Body() form: CreateProductDto) {
-    const product = this.productService.create(form);
-    return new ProductResponseDto(product);
+  async create(@Body() form: CreateProductDto) {
+    try {
+      const product = await this.productService.create(form, 'file/path');
+      return new ProductResponseDto(product);
+    } catch (e) {
+      if (e instanceof UniqueConstraintError) {
+        throw new BadRequestException(e.message);
+      }
+    }
   }
 
   @Patch(':id')
-  update(
+  async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() form: UpdateProductDto,
   ) {
     try {
-      const product = this.productService.update(id, form);
+      const product = await this.productService.update(id, form, 'file/path');
       return new ProductResponseDto(product);
-    } catch (error) {
-      throw new NotFoundException(error);
+    } catch (e) {
+      if (e instanceof RecordNotFoundError) throw new NotFoundException();
+
+      if (e instanceof UniqueConstraintError) {
+        throw new BadRequestException(e.message);
+      }
     }
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
-  remove(@Param('id', ParseIntPipe) id: number) {
+  async destroy(@Param('id', ParseIntPipe) id: number) {
     try {
-      return this.productService.remove(id);
-    } catch (error) {
-      throw new NotFoundException(error);
+      return await this.productService.destroy(id);
+    } catch (e) {
+      if (e instanceof RecordNotFoundError) throw new NotFoundException();
     }
   }
 }
