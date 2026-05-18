@@ -8,7 +8,13 @@ import { UsersModule } from './users/users.module';
 import { CategoriesModule } from './categories/categories.module';
 
 @Module({
-  imports: [ConfigModule.forRoot(), ProductsModule, CoreModule, UsersModule, CategoriesModule],
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+    ProductsModule,
+    CoreModule,
+    UsersModule,
+    CategoriesModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })
