@@ -1,0 +1,20 @@
+services:
+  app:
+    build:
+      context: .
+      target: builder
+    command: npm run start:dev
+    env_file:
+      - ./.env
+    ports:
+      - '9191:9191'
+  db:
+    image: 'postgres:16.3-alpine3.20'
+    ports:
+      - 9111:5432
+    environment:
+      POSTGRES_USER: myapp
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: shop
+    volumes:
+      - ./data/pg:/var/lib/postgresql/data
