@@ -1,4 +1,13 @@
 services:
+  app:
+    build:
+      context: .
+      target: builder
+    command: npm run start:dev
+    env_file:
+      - ./.env
+    ports:
+      - '9191:9191'
   db:
     image: 'postgres:16.3-alpine3.20'
     ports:
