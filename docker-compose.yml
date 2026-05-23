@@ -1,13 +1,17 @@
 services:
-  app:
-    build:
-      context: .
-      target: builder
-    command: npm run start:dev
-    env_file:
-      - ./.env
-    ports:
-      - '9191:9191'
+  # app:
+  #   build:
+  #     context: .
+  #     target: builder
+  #   command: pnpm run start:dev
+  #   env_file:
+  #     - ./.env
+  #   environment:
+  #     DATABASE_URL: postgresql://myapp:mypassword@db:5432/shop?schema=public
+  #   ports:
+  #     - '9191:9191'
+  #   depends_on:
+  #     - db
   db:
     image: 'postgres:16.3-alpine3.20'
     ports:

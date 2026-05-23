@@ -3,15 +3,17 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-COPY package.json ./
-COPY package-lock.json ./
+RUN npm install -g pnpm
 
-RUN npm ci
+COPY package.json ./
+COPY pnpm-lock.yaml ./
+
+RUN pnpm install --frozen-lockfile
 
 COPY . .
 
-RUN npx prisma generate
-RUN npm run build
+RUN pnpm prisma generate
+RUN pnpm run build
 
 FROM node:20-alpine AS runner
 
@@ -20,12 +22,13 @@ ENV NODE_ENV=${NODE_ENV}
 
 WORKDIR /app
 
+RUN npm install -g pnpm
+
 COPY package.json ./
 COPY pnpm-lock.yaml ./
 
-RUN npm install --prod
+RUN pnpm install --prod --frozen-lockfile
 
 COPY --from=builder /app/dist ./dist
 
 CMD ["node", "dist/main"]
-

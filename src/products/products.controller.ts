@@ -12,6 +12,7 @@ import {
   Patch,
   Post,
   Query,
+  UploadedFile,
 } from '@nestjs/common';
 import { FindAllQueryDto } from './dtos/find-all-query.dto';
 import { ProductsService } from './products.service';
@@ -21,6 +22,7 @@ import { ProductResponseDto } from './dtos/product-response.dto';
 import { ProductListResponseDto } from './dtos/product-list-response.dto';
 import { UniqueConstraintError } from 'src/core/errors/unique-constraint.error';
 import { RecordNotFoundError } from 'src/core/errors/record-not-found.error';
+import { UploadFileInterceptor } from 'src/core/interceptors/upload-file.interceptor';
 
 @Controller('products')
 export class ProductsController {
@@ -43,10 +45,14 @@ export class ProductsController {
   }
 
   @Post()
+  @UploadFileInterceptor('image', { destination: 'uploads/products' })
   @HttpCode(HttpStatus.CREATED)
-  async create(@Body() form: CreateProductDto) {
+  async create(
+    @Body() form: CreateProductDto,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
     try {
-      const product = await this.productService.create(form, 'file/path');
+      const product = await this.productService.create(form, file.filename);
       return new ProductResponseDto(product);
     } catch (e) {
       if (e instanceof UniqueConstraintError) {
@@ -56,12 +62,14 @@ export class ProductsController {
   }
 
   @Patch(':id')
+  @UploadFileInterceptor('image', { destination: 'uploads/products' })
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() form: UpdateProductDto,
+    @UploadedFile() file: Express.Multer.File,
   ) {
     try {
-      const product = await this.productService.update(id, form, 'file/path');
+      const product = await this.productService.update(id, form, file.filename);
       return new ProductResponseDto(product);
     } catch (e) {
       if (e instanceof RecordNotFoundError) throw new NotFoundException();

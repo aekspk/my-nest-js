@@ -21,6 +21,9 @@ export class ProductResponseDto {
   price: number;
 
   @Expose()
+  image: string;
+
+  @Expose()
   @Type(() => CategoryResponseDto) //Type ที่เป็น response
   categories: Category[]; //Type ที่รับมา
 
