@@ -20,7 +20,9 @@ import { CreateCategoryDto } from './dtos/create-category.dto';
 import { UniqueConstraintError } from 'src/core/errors/unique-constraint.error';
 import { RecordNotFoundError } from 'src/core/errors/record-not-found.error';
 import { Cache, CACHE_MANAGER, CacheInterceptor } from '@nestjs/cache-manager';
+import { ApiTags, ApiOperation, ApiParam } from '@nestjs/swagger';
 
+@ApiTags('Categories')
 @Controller('categories')
 @UseInterceptors(CacheInterceptor)
 export class CategoriesController {
@@ -29,6 +31,7 @@ export class CategoriesController {
     @Inject(CACHE_MANAGER) private readonly cache: Cache,
   ) {}
 
+  @ApiOperation({ summary: 'Get all categories' })
   @Get()
   async findAll() {
     const categories = await this.categoriesService.findAll();
@@ -36,6 +39,8 @@ export class CategoriesController {
     return categories.map((c) => new CategoryResponseDto(c));
   }
 
+  @ApiOperation({ summary: 'Get a category by ID' })
+  @ApiParam({ name: 'id', type: Number })
   @Get(':id')
   async findOne(@Param('id', ParseIntPipe) id: number) {
     const category = await this.categoriesService.findById(id);
@@ -45,6 +50,7 @@ export class CategoriesController {
     return new CategoryResponseDto(category);
   }
 
+  @ApiOperation({ summary: 'Create a new category' })
   @Post()
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() form: CreateCategoryDto) {
@@ -61,6 +67,8 @@ export class CategoriesController {
     }
   }
 
+  @ApiOperation({ summary: 'Update a category by ID' })
+  @ApiParam({ name: 'id', type: Number })
   @Patch(':id')
   async update(
     @Param('id', ParseIntPipe) id: number,
@@ -83,6 +91,8 @@ export class CategoriesController {
     }
   }
 
+  @ApiOperation({ summary: 'Delete a category by ID' })
+  @ApiParam({ name: 'id', type: Number })
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async destroy(@Param('id', ParseIntPipe) id: number) {

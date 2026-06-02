@@ -21,11 +21,17 @@ import { AccessTokenAuthGuard } from './guards/access-token-auth.guard';
 import { UploadFileInterceptor } from 'src/core/interceptors/upload-file.interceptor';
 import { UpdateUserDto } from 'src/users/dtos/update-user.dto';
 import { RefreshTokenAuthGuard } from './guards/refresh-token-auth.guard';
+import { ApiTags, ApiOperation, ApiBody, ApiBearerAuth, ApiConsumes } from '@nestjs/swagger';
+import { CreateUserDto } from 'src/users/dtos/create-user.dto';
+import { Login } from './dtos/login.dto';
 
+@ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @ApiOperation({ summary: 'Register a new user' })
+  @ApiBody({ type: CreateUserDto })
   @Post('register')
   @UseGuards(RegisterAuthGuard)
   register(@CurrentUser() user: User) {
@@ -33,6 +39,8 @@ export class AuthController {
   }
 
   //POST /auth/login
+  @ApiOperation({ summary: 'Login with email and password' })
+  @ApiBody({ type: Login })
   @Post('login')
   @UseGuards(LoginAuthGuard)
   @HttpCode(HttpStatus.CREATED)
@@ -44,6 +52,8 @@ export class AuthController {
   }
 
   //POST /auth/refresh-token
+  @ApiOperation({ summary: 'Refresh access token' })
+  @ApiBearerAuth()
   @Post('refresh-token')
   @UseGuards(RefreshTokenAuthGuard)
   async refreshToken(@CurrentUser() user: User) {
@@ -54,6 +64,8 @@ export class AuthController {
   }
 
   // GET /auth/profile
+  @ApiOperation({ summary: 'Get current user profile' })
+  @ApiBearerAuth()
   @Get('profile')
   @UseGuards(AccessTokenAuthGuard)
   async getProfile(@CurrentUser() user: User) {
@@ -62,6 +74,21 @@ export class AuthController {
   }
 
   // PATCH /auth/profile
+  @ApiOperation({ summary: 'Update current user profile' })
+  @ApiBearerAuth()
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        image: { type: 'string', format: 'binary' },
+        name: { type: 'string' },
+        email: { type: 'string' },
+        password: { type: 'string' },
+        address: { type: 'object' },
+      },
+    },
+  })
   @Patch('profile')
   @UploadFileInterceptor('image', { destination: 'uploads/users' })
   async updateProfile(
@@ -78,6 +105,8 @@ export class AuthController {
   }
 
   //DELETE /auth/logout
+  @ApiOperation({ summary: 'Logout current user' })
+  @ApiBearerAuth()
   @Delete('logout')
   @UseGuards(AccessTokenAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)

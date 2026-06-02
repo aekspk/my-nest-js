@@ -25,10 +25,15 @@ import { RecordNotFoundError } from 'src/core/errors/record-not-found.error';
 import { UploadFileInterceptor } from 'src/core/interceptors/upload-file.interceptor';
 import { Auth } from 'src/auth/guards/auth.guard';
 import { Role } from 'src/users/role.model';
+import { ApiTags, ApiOperation, ApiParam, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
 
+@ApiTags('Products')
 @Controller('products')
 export class ProductsController {
   constructor(private readonly productService: ProductsService) {}
+
+  @ApiOperation({ summary: 'Get all products' })
+  @ApiBearerAuth()
   @Get()
   @Auth(Role.Admin, Role.Moderator)
   async findAll(@Query() query: FindAllQueryDto) {
@@ -40,6 +45,8 @@ export class ProductsController {
     return new ProductListResponseDto(itemsPaging);
   }
 
+  @ApiOperation({ summary: 'Get a product by ID or slug' })
+  @ApiParam({ name: 'idOrSlug', type: String })
   @Get(':idOrSlug')
   async findOne(@Param('idOrSlug') idOrSlug: string) {
     const product = await this.productService.findByIdOrSlug(idOrSlug);
@@ -47,6 +54,21 @@ export class ProductsController {
     return new ProductResponseDto(product);
   }
 
+  @ApiOperation({ summary: 'Create a new product' })
+  @ApiBearerAuth()
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string' },
+        desc: { type: 'string' },
+        price: { type: 'number' },
+        categoryIds: { type: 'array', items: { type: 'number' } },
+        image: { type: 'string', format: 'binary' },
+      },
+    },
+  })
   @Post()
   @Auth(Role.Admin, Role.Moderator)
   @UploadFileInterceptor('image', { destination: 'uploads/products' })
@@ -65,6 +87,21 @@ export class ProductsController {
     }
   }
 
+  @ApiOperation({ summary: 'Update a product by ID' })
+  @ApiParam({ name: 'id', type: Number })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        name: { type: 'string' },
+        desc: { type: 'string' },
+        price: { type: 'number' },
+        categoryIds: { type: 'array', items: { type: 'number' } },
+        image: { type: 'string', format: 'binary' },
+      },
+    },
+  })
   @Patch(':id')
   @UploadFileInterceptor('image', { destination: 'uploads/products' })
   async update(
@@ -84,6 +121,8 @@ export class ProductsController {
     }
   }
 
+  @ApiOperation({ summary: 'Delete a product by ID' })
+  @ApiParam({ name: 'id', type: Number })
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   async destroy(@Param('id', ParseIntPipe) id: number) {
