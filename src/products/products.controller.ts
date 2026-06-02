@@ -23,11 +23,14 @@ import { ProductListResponseDto } from './dtos/product-list-response.dto';
 import { UniqueConstraintError } from 'src/core/errors/unique-constraint.error';
 import { RecordNotFoundError } from 'src/core/errors/record-not-found.error';
 import { UploadFileInterceptor } from 'src/core/interceptors/upload-file.interceptor';
+import { Auth } from 'src/auth/guards/auth.guard';
+import { Role } from 'src/users/role.model';
 
 @Controller('products')
 export class ProductsController {
   constructor(private readonly productService: ProductsService) {}
   @Get()
+  @Auth(Role.Admin, Role.Moderator)
   async findAll(@Query() query: FindAllQueryDto) {
     const itemsPaging = await this.productService.findAll({
       page: query.page,
@@ -45,6 +48,7 @@ export class ProductsController {
   }
 
   @Post()
+  @Auth(Role.Admin, Role.Moderator)
   @UploadFileInterceptor('image', { destination: 'uploads/products' })
   @HttpCode(HttpStatus.CREATED)
   async create(
